@@ -1,0 +1,66 @@
+<!-- Basically I need to figure out how to do the AJAX for this bit so I
+I also need to figure out how the data will be stored (to then be loaded here) -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Prints all of the lists which the user has -->
+<ul>
+{% for list in listnames %}
+<!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
+<li><a href="javascript:select_list('{{list}}')">{{ list }}</a></li>
+{% endfor %}
+</ul>
+<!-- Will load in the new list form -->
+<div id="newlistbutton">New List</div>
+<!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
+<div id="newlistform" style="display: none;">
+    <form action="" method="post">
+        {{form.hidden_tag()}}
+        <p>
+            {{ form.listname.label }}<br>
+            {{ form.listname(size=32) }}<br>
+            {% for error in form.listname.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.submit() }}
+        </p>
+    </form>
+    <div id="closelistbutton"> Close </div>
+</div>
+
+<div id="currenttodolist">
+</div>
+
+
+
+
+{% block scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+    $("#newlistbutton").click(function () {
+        $("#newlistform").css("display", "block")
+    })
+    $("#closelistbutton").click(function () {
+        $("#newlistform").css("display", "none")
+    })
+</script>
+
+<script type=text/javascript>
+    function select_list(listname) {
+        // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
+        $.post('/select_list/', {
+            text: listname
+        }).done(function(response) {
+            $('#currenttodolist').html(response['listhtml'])
+        }).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.');
+        });
+    }
+
+</script>
+{% endblock %}
+
+{% endblock %}
