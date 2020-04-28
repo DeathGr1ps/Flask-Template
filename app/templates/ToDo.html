@@ -5,33 +5,32 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
 {% block content %}
 <!-- Prints all of the lists which the user has -->
-<ul>
-{% for list in listnames %}
-<!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
-<li><a href="javascript:select_list('{{list}}')">{{ list }}</a></li>
-{% endfor %}
+<ul id='listoflists'>
+    {% for list in listnames %}
+    <!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
+    <li><a href="javascript:select_list('{{list}}')">{{ list }}</a><a href="javascript:delete_list('{{list}}')"
+            style="opacity: 0.5;">X</a></li>
+    {% endfor %}
 </ul>
 <!-- Will load in the new list form -->
 <div id="newlistbutton">New List</div>
 <!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
 <div id="newlistform" style="display: none;">
-    <form action="" method="post">
-        {{form.hidden_tag()}}
-        <p>
-            {{ form.listname.label }}<br>
-            {{ form.listname(size=32) }}<br>
-            {% for error in form.listname.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.submit() }}
-        </p>
-    </form>
+    <input type='text' id='newlistnameentry'>
+    <input type='button' id='newlistnamebutton'>
     <div id="closelistbutton"> Close </div>
 </div>
 
 <div id="currenttodolist">
+    <div id="listitems">
+
+    </div>
+    <div id="newitembutton">New Item</div>
+    <div id="newitemform" style="display: none;">
+        <input type='text' id='newitemnameentry'>
+        <input type='button' id='newitemnamebutton'>
+        <div id="closeitembutton"> Close </div>
+    </div>
 </div>
 
 
@@ -39,28 +38,81 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
 {% block scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript>
+<script type=text/javascript> // This section of script handles all clicking functions (just to simplify)
     $("#newlistbutton").click(function () {
-        $("#newlistform").css("display", "block")
+        $("#newlistform").toggle("display") //Toggle allows to do a simple if.
     })
     $("#closelistbutton").click(function () {
-        $("#newlistform").css("display", "none")
+        $("#newlistform").toggle("display")
+    })
+    $("#newitembutton").click(function () {
+        $("#newitemform").toggle("display") //Toggle allows to do a simple if.
+    })
+    $("#closeitembutton").click(function () {
+        $("#newitemform").toggle("display")
     })
 </script>
 
 <script type=text/javascript>
+    function updated_listoflists(listoflists){//function to create the html code for displaying the list of lists whenever it is updated
+        let htmlcode = ''
+        for (i = 0; i < listoflists.length; i++) {
+                    let templatestring = `<li><a href="javascript:select_list('${listoflists[i]}')"> ${listoflists[i]} </a><a href="javascript:delete_list('${listoflists[i]}')" style="opacity: 0.5;">X</a></li>`
+                    htmlcode += templatestring
+                }
+            return htmlcode}
+
     function select_list(listname) {
         // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
         $.post('/select_list/', {
             text: listname
         }).done(function(response) {
-            $('#currenttodolist').html(response['listhtml'])
+            $('#listitems').html(response['listhtml'])
+            window.currentlist = listname // Probably a really bad way of doing this but it is easy in this case. Could maybe do something jank with adding and removing classes?
         }).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.');
+            $('#listitems').text('Error: Could not contact server.');
         });
     }
 
+    function new_list(newlistname) {
+        // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
+        if (newlistname !== ''){
+        $.post('/create_list/', {
+            text: newlistname
+        }).done(function(response) { //Might need to change this. Currently showing a blank list because that should be the default for a returned list
+            if (response['isduplicatename'] == 'True'){
+                //pass. Dont know what to do in this case. Need some sort of error system
+            } else {
+                
+            $('#listitems').html(response['listhtml'])
+            window.currentlist = newlistname // Same jank as in select_list
+            $('#listoflists').html(updated_listoflists(response['listoflists']))
+                }}).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
+        });
+    }}
+
+    $("#newlistnamebutton").on('click', function(clickEvent) {
+        new_list($("#newlistnameentry").val())})
+
+    function delete_list(listname){ //Should probably add an are you sure feature
+        $.post('/delete_list/', {
+            text: listname
+        }).done(function(response) { //Need to decide what list should be shown. Presumably a check to see if the current list was deleted (which means just go to the one at the top of list)
+            if (window.currentlist == listname){    // IF we deleted the list that the user is currently looking at then show nothing. Else dont change
+                $('#listitems').html('')
+            }
+            $('#listoflists').html(updated_listoflists(response['listoflists']))  //Always update the list of lists
+        }).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.');
+        });
+
+    }   
 </script>
+
+
+
+
 {% endblock %}
 
 {% endblock %}
