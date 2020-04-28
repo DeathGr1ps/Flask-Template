@@ -16,7 +16,7 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 <div id="newlistbutton">New List</div>
 <!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
 <div id="newlistform" style="display: none;">
-    <input type='text' id='newlistnameentry'>
+    <input type='text' id='newlistnameentry' placeholder="List Name">
     <input type='button' id='newlistnamebutton'>
     <div id="closelistbutton"> Close </div>
 </div>
@@ -27,7 +27,7 @@ I also need to figure out how the data will be stored (to then be loaded here) -
     </div>
     <div id="newitembutton">New Item</div>
     <div id="newitemform" style="display: none;">
-        <input type='text' id='newitemnameentry'>
+        <input type='text' id='newitemnameentry' placeholder='Item Name'>
         <input type='button' id='newitemnamebutton'>
         <div id="closeitembutton"> Close </div>
     </div>
@@ -87,6 +87,24 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             $('#listitems').html(response['listhtml'])
             window.currentlist = newlistname // Same jank as in select_list
             $('#listoflists').html(updated_listoflists(response['listoflists']))
+            $("#newlistnameentry").val('')  //Clears the name entry
+                }}).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
+        });
+    }}
+
+
+    function new_item(newitemname) {
+        if (newitemname !== ''){
+        $.post('/create_item/', {
+            itemname: newitemname,
+            parentlist: window.currentlist
+        }).done(function(response) { //Might need to change this. Currently showing a blank list because that should be the default for a returned list
+            if (response['isduplicatename'] == 'True'){
+                //pass. Dont know what to do in this case. Need some sort of error system
+            } else {
+            $('#listitems').html(response['listhtml'])
+            $("#newitemnameentry").val('')
                 }}).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
         });
@@ -94,6 +112,8 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
     $("#newlistnamebutton").on('click', function(clickEvent) {
         new_list($("#newlistnameentry").val())})
+    $("#newitemnamebutton").on('click', function(clickEvent) {
+    new_item($("#newitemnameentry").val())})
 
     function delete_list(listname){ //Should probably add an are you sure feature
         $.post('/delete_list/', {
@@ -107,8 +127,41 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             $('#currenttodolist').text('Error: Could not contact server.');
         });
 
-    }   
-</script>
+    }
+
+    function delete_item(itemname){ //Should probably add an are you sure feature
+        $.post('/delete_item/', {
+            itemtobedeleted: itemname,
+            parentlist: window.currentlist
+        }).done(function(response) {   
+            $('#listitems').html(response['listhtml'])
+        }).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.');
+        });
+
+    } 
+
+    function change_item_status(itemname, newstatus){
+        //Change front end first. (classes)
+        $(`#${itemname}`).removeClass('Completed')
+        $(`#${itemname}`).removeClass('In Progress')
+        $(`#${itemname}`).removeClass('Not Started')    //Remove all 3 classes (cant remove all because then bootstrap would break)
+        $(`#${itemname}`).addClass(newstatus)   //ReAdd the new class
+        //Then send the updated change to the backend
+
+        $.post('/item_class/', {
+            itemtobechanged: itemname,
+            parentlist: window.currentlist,
+            newstatus: newstatus
+        }).done(function(response) {   
+            //Pass
+        }).fail(function() {
+            $('#currenttodolist').text('Error: Could not contact server.');
+        });
+
+
+    }
+</script> 
 
 
 

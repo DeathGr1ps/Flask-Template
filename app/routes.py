@@ -43,6 +43,24 @@ def create_list():
         print(returnuserlists())
         return jsonify({'listhtml': '', 'listoflists': returnuserlists(), 'isduplicatename': 'False'}) #Currently return a blank list, leaving this open as an oppurtunity to change in the future for whatever reason
 
+@app.route('/create_item/', methods=['POST'])
+@login_required
+def create_item():
+    newitemname = request.form['itemname'] #Gets the name for the new list from the post request.
+    parentlist = List.query.filter_by(listname = request.form['parentlist']).first() #Gets the list object of the parent
+    print(parentlist)
+
+    #print('This is the result of the query', List.query.filter_by(listname=newlistname, user_id=current_user.id).first())
+    if Item.query.filter_by(itemname=newitemname, list_id=parentlist.id).first(): #Checks to see if the name is in the system already (and under the ID that is trying to create the list)
+        return jsonify({'isduplicatename': 'True'}) #CHANGE THIS RETURN STATEMENT
+    else:
+        newitem = Item(itemname=newitemname, user_id=current_user.id, list_id=parentlist.id)
+        db.session.add(newitem)
+        db.session.commit()
+        outhtml = get_formatted_list(request.form['parentlist'])  #Runs the function to get the raw html for the list
+        print(outhtml)
+        return jsonify({'isduplicatename': 'False', 'listhtml': outhtml}) #Only need to return the duplicate status, JS side already has a function for reloading the list of items
+
 @app.route('/delete_list/', methods=['POST'])
 @login_required
 def delete_list():
@@ -57,14 +75,34 @@ def delete_list():
     db.session.commit() #commit changes
     return jsonify({'successful':'True', 'listoflists': returnuserlists()})
 
+@app.route('/delete_item/', methods=['POST'])
+@login_required
+def delete_item():
+    itemtodelete = Item.query.filter_by(itemname=request.form['itemtobedeleted'],   #Has the name we looking for
+                                        list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #On the list we are on
+    db.session.delete(itemtodelete) #Delete the item
+    db.session.commit() #commit changes
+    itemlist = get_formatted_list(request.form['parentlist'])
+    return jsonify({'successful':'True', 'listhtml': itemlist})
+
+@app.route('/item_class/', methods=['POST'])
+@login_required
+def change_item_class():
+    itemtochanged = Item.query.filter_by(itemname=request.form['itemtobechanged'],   #Has the name we looking for
+                                        list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #On the list we are on
+    itemtochanged.completion_status = request.form['newstatus'] #Changes the current completion status
+    db.session.commit() #commit changes
+    return jsonify({'successful':'True'})   #Dont need to reload anything
+
 @app.route('/select_list/', methods=['POST'])
 @login_required
-def get_formatted_list():
-    listname = request.form['text']
+def select_list_jsonifier():
+    return jsonify({'listhtml': get_formatted_list(request.form['text'])})
+
+def get_formatted_list(listname):
     itemlist = select_list(listname)
-    print(itemlist)
     outputhtml = list_html(itemlist)
-    return jsonify({'listhtml': outputhtml})
+    return outputhtml
 
 #Retrieves unformatted items from a list
 def select_list(listname):      #This is AJAX Shit dunno how to do
@@ -76,7 +114,7 @@ def select_list(listname):      #This is AJAX Shit dunno how to do
 def list_html(itemlist):
     outputhtml = '<ul>'
     for item in itemlist:
-        htmlstring = f"<li class='{item[1]}'> {item[0]} </li>"
+        htmlstring = f"<li class='{item[1]}' id='{item[0]}'> {item[0]} <a href='javascript:change_item_status(\"{item[0]}\", \"Not Started\")' style='opacity: 0.5;'> N </a> <a href='javascript:change_item_status(\"{item[0]}\", \"In Progress\")' style='opacity: 0.5;'> P </a>  <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' style='opacity: 0.5;'> C </a> <a href='javascript:delete_item(\"{item[0]}\")' style='opacity: 0.5;'>X</a></li>"
         outputhtml += htmlstring
     outputhtml += '</ul>'
     return outputhtml
