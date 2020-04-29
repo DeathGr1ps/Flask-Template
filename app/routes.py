@@ -38,9 +38,10 @@ def create_list():
 def create_item():
     newitemname = request.form['itemname'] #Gets the name for the new list from the post request.
     parentlist = List.query.filter_by(listname = request.form['parentlist']).first() #Gets the list object of the parent
+    print(newitemname)
     print(parentlist)
 
-    #print('This is the result of the query', List.query.filter_by(listname=newlistname, user_id=current_user.id).first())
+    print('This is the result of the query', List.query.filter_by(listname=newitemname, user_id=current_user.id).first())
     if Item.query.filter_by(itemname=newitemname, list_id=parentlist.id).first(): #Checks to see if the name is in the system already (and under the ID that is trying to create the list)
         return jsonify({'isduplicatename': 'True'}) #CHANGE THIS RETURN STATEMENT
     else:
@@ -48,7 +49,6 @@ def create_item():
         db.session.add(newitem)
         db.session.commit()
         outhtml = get_formatted_list(request.form['parentlist'])  #Runs the function to get the raw html for the list
-        print(outhtml)
         return jsonify({'isduplicatename': 'False', 'listhtml': outhtml}) #Only need to return the duplicate status, JS side already has a function for reloading the list of items
 
 @app.route('/delete_list/', methods=['POST'])
