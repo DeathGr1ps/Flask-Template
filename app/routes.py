@@ -19,7 +19,6 @@ def returnuserlists():  #Function for returning all lists associated with the cu
     userLists = user.lists.all()
     return [i.listname for i in userLists]
 
-
 #All methods which require database entry / modification are handeled through POST requests from the browser
 @app.route('/create_list/', methods=['POST'])   #Creates a list
 @login_required
