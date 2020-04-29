@@ -1,10 +1,9 @@
-<!-- Basically I need to figure out how to do the AJAX for this bit so I
-I also need to figure out how the data will be stored (to then be loaded here) -->
-
+<!-- One page AJAXian webapp ? -->
 {% extends "base.html" %}
-
 {% block app_content %}
+
 <link rel="stylesheet" type="text/css" href="../static/css/ToDo.css">
+<!-- Simple CSS for adjusting items based on completion status. -->
 
 <div class="container">
     <div class="row">
@@ -14,216 +13,144 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             <div class="sidebar-heading h3">Your Lists: </div>
             <div class="list-group list-group-flush" id="listoflists">
                 <div id="THISISWHERETHELISTSGO">
+                    <!-- Keeps lists seperate of the new list button to simplifier later recreation of the sidebar-->
                     {% for list in listnames %}
                     <div class="row list-group-item list-group-item-action bg-light">
+                        <!--Creates a slot in the sidebar for each list. Each link calls a JS function-->
                         <a href="javascript:select_list('{{list}}')" class="col-md-6">{{ list }}</a>
                         <a class="badge" href="javascript:delete_list('{{list}}')" style="opacity: 0.5;">X</a>
                     </div>
                     {% endfor %}
                 </div>
+                <!-- The button (form) that creates a new list -->
                 <div class="row list-group-item list-group-item-action bg-light" id="newlistform">
+                    <!-- Doesn't actually use form tags because dont want the webpage posting (eg. submit button) -->
                     <div class="form-group">
                         <label for="newlistnameentry" class="h4">New List: </label>
                         <input class="form-control" id="newlistnameentry" placeholder="Enter list name">
                         <small class="form-text text-muted">Each list must have a unique name.</small>
                     </div>
                     <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>
-
-                    <!-- <div class="col-md-6">
-                        <div class="h5" style="display:inline-block">New List: </div>
-                        <input type='text' id='newlistnameentry' style="display:inline-block" placeholder="List Name" class="form-control">
-                    </div> -->
                 </div>
             </div>
         </div>
-        <!-- End sidebar -->
-        <!-- <div class="col-md-3"> -->
-        <!-- Prints all of the lists which the user has -->
-        <!-- <ul id='listoflists' class="nav flex-column"> -->
-        <!-- {% for list in listnames %} -->
-        <!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
-        <!-- <li> -->
-        <!-- Next line includes some manual padding because it seems that Bootstrap 3 doesnt work with the model listed here https://getbootstrap.com/docs/4.0/utilities/spacing/-->
-        <!-- <div class="row" style="padding-top: 1em;"><a class="col-md-8" -->
-        <!-- href="javascript:select_list('{{list}}')">{{ list }}</a><a class="col-md-4"
-            href="javascript:delete_list('{{list}}')" style="opacity: 0.5;">X</a> -->
-        <!-- </div> -->
-
-        <!-- </li> -->
-        <!-- {% endfor %} -->
-        <!-- </ul> -->
-        <!-- <div id="newlistbutton" style="padding-top: 1em;"> <a> New List </a></div> -->
-        <!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
-
-        <!-- </div> -->
-        <!-- LEFT-->
-
-
-
-        <!-- Will load in the new list form -->
-
 
         <!-- RIGHT -->
         <div class="col-md-9">
             <div id="currenttodolist">
                 <div id="currentlistnametext" class="h3">No List Selected</div>
+                <!-- This text is changed to reflect the current list-->
                 <hr>
                 <div id="listitems">
+                    <!-- Space that is populated by later functions-->
                 </div>
                 <hr>
+                <!-- Largely a repeat of the list entry. -->
                 <div id="newitemform" style="display:none">
                     <div class="form-group">
                         <label for="newitemnameentry" class="h4">New Item: </label>
                         <input class="form-control" id="newitemnameentry" placeholder="Enter new item">
-                        <small id="emailHelp" class="form-text text-muted">Remember each item must have a unique
-                            name.</small>
+                        <small class="form-text text-muted">Remember each item must have a unique name.</small>
                     </div>
                     <button type="button" id='newitemnamebutton' class="btn btn-primary">Add!</button>
                 </div>
-
-                <!-- <div id="newitembutton">New Item</div> -->
-                <!-- <div id="newitemform" style="display: none;">
-                    <input type='text' id='newitemnameentry' placeholder='Item Name'>
-                    <input type='button' id='newitemnamebutton'>
-                    <div id="closeitembutton"> Close </div> -->
             </div>
         </div>
     </div>
     <!-- RIGHT -->
 </div>
-</div>
 
-<!-- Basically call the script block to load the bootstap.js and jquery so I dont have to load it my self -->
+<!-- Basically calls the script block to load the bootstap.js and jquery so I dont have to load it my self -->
 {% block scripts %}
 <script src="{{bootstrap_find_resource('jquery.js', cdn='jquery')}}"></script>
 <script src="{{bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap')}}"></script>
 {% endblock %}
-<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
-<script type=text/javascript> // This section of script handles all clicking functions (just to simplify)
-    // //For some reason using a toggle breaks with using bootstrap.
-    // $("#newlistbutton").on('click', function(clickEvent) {
-    //     alert("hentai")
-    //     if ($("#newlistform").css("display") == "in-line") {
-    //         $("#newlistform").css("display", "none")
-    //     } else {
-    //         $("#newlistform").css("display", "in-line") 
-    //     }})
-
-    // $("#closelistbutton").on('click', function(clickEvent) {
-    //     if ($("#newlistform").css("display") == "in-line") {
-    //         $("#newlistform").css("display", "none")
-    //     } else {
-    //         $("#newlistform").css("display", "in-line") 
-    //     }})
-
-    // $("#newitembutton").click(function () {
-    //     $("#newitemform").toggle("display") //Toggle allows to do a simple if.
-    // })
-    // $("#closeitembutton").click(function () {
-    //     $("#newitemform").toggle("display")
-    // })
-</script>
 
 <script type=text/javascript>
-    function updated_listoflists(listoflists){//function to create the html code for displaying the list of lists whenever it is updated
+    function updated_listoflists(listoflists){  //Function to create the html code for displaying the list of lists whenever it is updated
         let htmlcode = ''
         for (i = 0; i < listoflists.length; i++) {
                     let newtemplatestring = `<div class="row list-group-item list-group-item-action bg-light">
-                    <a href="javascript:select_list('${listoflists[i]}')" class="col-md-6">${listoflists[i]}</a>
-                    <a class="badge" href="javascript:delete_list('${listoflists[i]}')" style="opacity: 0.5;">X</a>
-                </div>`
+                                                <a href="javascript:select_list('${listoflists[i]}')" class="col-md-6">${listoflists[i]}</a>
+                                                <a class="badge" href="javascript:delete_list('${listoflists[i]}')" style="opacity: 0.5;">X</a>
+                                            </div>`
                     htmlcode += newtemplatestring
                 }
-            //  htmlcode += `<div class="row list-group-item list-group-item-action bg-light" id="newlistform">
-            //         <div class="form-group">
-            //             <label for="newlistnameentry" class="h4">New List: </label>
-            //             <input type="email" class="form-control" id="newlistnameentry" aria-describedby="emailHelp"
-            //                 placeholder="Enter list name">
-            //             <small id="emailHelp" class="form-text text-muted">Each list must have a unique name.</small>
-            //         </div>
-            //         <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>`
             return htmlcode}
 
-    function select_list(listname) {
-        // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
+    function select_list(listname) {    //Function for showing a selected list
         $.post('/select_list/', {
             text: listname
         }).done(function(response) {
-            $('#listitems').html(response['listhtml'])
-            $('#newitemform').css('display', 'block')
+            $('#listitems').html(response['listhtml']) //Updates the list of items
+            $('#newitemform').css('display', 'block')   //Shows the button for adding a new item to the list
             window.currentlist = listname // Probably a really bad way of doing this but it is easy in this case. Could maybe do something jank with adding and removing classes?
-            $('#currentlistnametext').text(window.currentlist)
+            $('#currentlistnametext').text(window.currentlist) //Updates the title at the top of the list
         }).fail(function() {
             $('#listitems').text('Error: Could not contact server.');
         });
     }
 
-    function new_list(newlistname) {
-        // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
-        if (newlistname !== ''){
+    function new_list(newlistname) { // Creates a new list (both on webpage and in database)
+        if (newlistname !== ''){ //Check to make sure there is a name
         $.post('/create_list/', {
             text: newlistname
-        }).done(function(response) { //Might need to change this. Currently showing a blank list because that should be the default for a returned list
+        }).done(function(response) {
             if (response['isduplicatename'] == 'True'){
-                //pass. Dont know what to do in this case. Need some sort of error system
+                //Pass. Duplicate names for the same user are not allowed because they are not unique.
             } else {
-                
-            $('#listitems').html(response['listhtml'])
+            $('#listitems').html(response['listhtml'])  //Currently returns a blank list but the /create_list/ side could be changed to come with default items
             window.currentlist = newlistname // Same jank as in select_list
             $('#currentlistnametext').text(window.currentlist)
             $('#THISISWHERETHELISTSGO').html(updated_listoflists(response['listoflists']))
             $('#newitemform').css('display', 'block')
             $("#newlistnameentry").val('')  //Clears the name entry
                 }}).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
+            $('#currenttodolist').text('Error: Could not contact server.');
         });
     }}
 
-
-    function new_item(newitemname) {
+    function new_item(newitemname) { // Creates a new item (both on webpage and in database)
         if (newitemname !== ''){
         $.post('/create_item/', {
             itemname: newitemname,
             parentlist: window.currentlist
         }).done(function(response) { //Might need to change this. Currently showing a blank list because that should be the default for a returned list
             if (response['isduplicatename'] == 'True'){
-                //pass. Dont know what to do in this case. Need some sort of error system
+                //Pass. Cannot have duplicate item names on the same list.
             } else {
             $('#listitems').html(response['listhtml'])
             $("#newitemnameentry").val('')
                 }}).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
+            $('#currenttodolist').text('Error: Could not contact server.'); 
         });
     }}
 
-    $("#newlistnamebutton").on('click', function(clickEvent) {
-        clickEvent.stopPropagation()
+    $("#newlistnamebutton").on('click', function(clickEvent) { //Event handler for the new list button
+        clickEvent.stopPropagation()    //Leaving in for redundancy, was an attempt at a fix to stop buttons from acting as though they were clicked twice
         new_list($("#newlistnameentry").val())})
         
-    $("#newitemnamebutton").on('click', function(clickEvent) {
+    $("#newitemnamebutton").on('click', function(clickEvent) { //Event handler for the new item button
         clickEvent.stopPropagation()
         new_item($("#newitemnameentry").val())})
 
-    function delete_list(listname){ //Should probably add an are you sure feature
+    function delete_list(listname){ //Deletes a list (both on webpage and in database)
         $.post('/delete_list/', {
             text: listname
-        }).done(function(response) { //Need to decide what list should be shown. Presumably a check to see if the current list was deleted (which means just go to the one at the top of list)
+        }).done(function(response) { 
             if (window.currentlist == listname){    // IF we deleted the list that the user is currently looking at then show nothing. Else dont change
                 $('#listitems').html('')
                 window.currentlist = 'No List Selected'
                 $('#currentlistnametext').text(window.currentlist)
-                $('#newitemform').css('display', 'none')
+                $('#newitemform').css('display', 'none')        //Disapear the new item form because there is no current list to add an item to.
             }
-            
-            
             $('#THISISWHERETHELISTSGO').html(updated_listoflists(response['listoflists']))  //Always update the list of lists
         }).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.');
         });
-
     }
 
-    function delete_item(itemname){ //Should probably add an are you sure feature
+    function delete_item(itemname){ //Deletes an item (both on webpage and in database)
         $.post('/delete_item/', {
             itemtobedeleted: itemname,
             parentlist: window.currentlist
@@ -235,14 +162,13 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
     } 
 
-    function change_item_status(itemname, newstatus){
+    function change_item_status(itemname, newstatus){ //Changes the classes (appearance) of list items based on their completion status.
         //Change front end first. (classes)
         $(`#${itemname}`).removeClass('Completed')
         $(`#${itemname}`).removeClass('InProgress')
         $(`#${itemname}`).removeClass('NotStarted')    //Remove all 3 classes (cant remove all because then bootstrap would break)
         $(`#${itemname}`).addClass(newstatus)   //ReAdd the new class
         //Then send the updated change to the backend
-
         $.post('/item_class/', {
             itemtobechanged: itemname,
             parentlist: window.currentlist,
@@ -252,8 +178,6 @@ I also need to figure out how the data will be stored (to then be loaded here) -
         }).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.');
         });
-
-
     }
 </script>
 {% endblock %}

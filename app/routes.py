@@ -9,118 +9,113 @@ from datetime import datetime
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
 @login_required
-def index():
+def index():    #Main Webpage
     # Gets all of the lists which the user has created and lists them
     userListNames = returnuserlists()
     return render_template('ToDo.html', title='ToDo.Com', listnames=userListNames)
 
-def returnuserlists():
+def returnuserlists():  #Function for returning all lists associated with the currently logged in user
     user = User.query.filter_by(id=current_user.id).first()
     userLists = user.lists.all()
     return [i.listname for i in userLists]
 
-@app.route('/create_list/', methods=['POST'])
+
+#All methods which require database entry / modification are handeled through POST requests from the browser
+@app.route('/create_list/', methods=['POST'])   #Creates a list
 @login_required
 def create_list():
     newlistname = request.form['text'] #Gets the name for the new list from the post request.
-    #print('This is the result of the query', List.query.filter_by(listname=newlistname, user_id=current_user.id).first())
     if List.query.filter_by(listname=newlistname, user_id=current_user.id).first(): #Checks to see if the name is in the system already (and under the ID that is trying to create the list)
         return jsonify({'listhtml': '', 'listoflists': '', 'isduplicatename': 'True'})
     else:
-        newlist = List(listname=newlistname, user_id=current_user.id)
+        newlist = List(listname=newlistname, user_id=current_user.id)   #Creates the List object and adds to the database
         db.session.add(newlist)
         db.session.commit()
         print(returnuserlists())
         return jsonify({'listhtml': '', 'listoflists': returnuserlists(), 'isduplicatename': 'False'}) #Currently return a blank list, leaving this open as an oppurtunity to change in the future for whatever reason
 
-@app.route('/create_item/', methods=['POST'])
+@app.route('/create_item/', methods=['POST'])       #Creates an item
 @login_required
 def create_item():
     newitemname = request.form['itemname'] #Gets the name for the new list from the post request.
     parentlist = List.query.filter_by(listname = request.form['parentlist']).first() #Gets the list object of the parent
-    print(newitemname)
-    print(parentlist)
-
-    print('This is the result of the query', List.query.filter_by(listname=newitemname, user_id=current_user.id).first())
     if Item.query.filter_by(itemname=newitemname, list_id=parentlist.id).first(): #Checks to see if the name is in the system already (and under the ID that is trying to create the list)
-        return jsonify({'isduplicatename': 'True'}) #CHANGE THIS RETURN STATEMENT
+        return jsonify({'isduplicatename': 'True'})
     else:
-        newitem = Item(itemname=newitemname, user_id=current_user.id, list_id=parentlist.id)
+        newitem = Item(itemname=newitemname, user_id=current_user.id, list_id=parentlist.id)    #Creates the Item object and adds to the database
         db.session.add(newitem)
         db.session.commit()
         outhtml = get_formatted_list(request.form['parentlist'])  #Runs the function to get the raw html for the list
         return jsonify({'isduplicatename': 'False', 'listhtml': outhtml}) #Only need to return the duplicate status, JS side already has a function for reloading the list of items
 
-@app.route('/delete_list/', methods=['POST'])
+@app.route('/delete_list/', methods=['POST'])       #Deletes a list
 @login_required
 def delete_list():
     listtodelete = List.query.filter_by(listname=request.form['text']).first() #Converts from just the name into the SQLAlchemy list object
-    
     #First delete all items in the list (to save database space)
     itemstodelete = Item.query.filter_by(list_id = listtodelete.id).all() #Forms list of all items in the list to be deleted
-    for item in itemstodelete:  #delete each item
+    for item in itemstodelete:  #Delete each item
         db.session.delete(item)
     #Then delete the list itself
     db.session.delete(listtodelete) #Delete the list
-    db.session.commit() #commit changes
+    db.session.commit() #Commit changes
     return jsonify({'successful':'True', 'listoflists': returnuserlists()})
 
-@app.route('/delete_item/', methods=['POST'])
+@app.route('/delete_item/', methods=['POST'])   #Deletes an item. Simpler version of deleting a list
 @login_required
 def delete_item():
+    #Find the item that:
     itemtodelete = Item.query.filter_by(itemname=request.form['itemtobedeleted'],   #Has the name we looking for
-                                        list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #On the list we are on
+                                        list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #Is on the list we are on
     db.session.delete(itemtodelete) #Delete the item
-    db.session.commit() #commit changes
+    db.session.commit() #Commit changes
     itemlist = get_formatted_list(request.form['parentlist'])
     return jsonify({'successful':'True', 'listhtml': itemlist})
 
-@app.route('/item_class/', methods=['POST'])
+@app.route('/item_class/', methods=['POST'])    #Method for changing an items class (as listed in the database)
 @login_required
 def change_item_class():
+    #Find the item that:
     itemtochanged = Item.query.filter_by(itemname=request.form['itemtobechanged'],   #Has the name we looking for
                                         list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #On the list we are on
     itemtochanged.completion_status = request.form['newstatus'] #Changes the current completion status
-    db.session.commit() #commit changes
-    return jsonify({'successful':'True'})   #Dont need to reload anything
+    db.session.commit() #Commit changes
+    return jsonify({'successful':'True'})   #Dont need to reload anything; all handled through CSS.
 
-@app.route('/select_list/', methods=['POST'])
+@app.route('/select_list/', methods=['POST'])   #Returns the html for items in a list (when a list is selected)
 @login_required
 def select_list_jsonifier():
     return jsonify({'listhtml': get_formatted_list(request.form['text'])})
 
-def get_formatted_list(listname):
+def get_formatted_list(listname):   #Kept seperate from list selection to be called to update list when an item is added or removed
     itemlist = select_list(listname)
     outputhtml = list_html(itemlist)
     return outputhtml
 
-#Retrieves unformatted items from a list
-def select_list(listname):      #This is AJAX Shit dunno how to do
+def select_list(listname):  #Retrieves the data pertaining to the items in a given list
     selectedlist = List.query.filter_by(listname = listname).first()
     listItems = selectedlist.items.all()
     itemList = [(item.itemname, item.completion_status) for item in listItems]  #Froms a list of tuples. Tuple[0] = name, Tuple[1] = status
     return itemList
 
-def list_html(itemlist):
+def list_html(itemlist):    #Kept seperate from list selection to be called to update listoflists when an List is added or removed
     outputhtml = ''
-    for item in itemlist:
+    for item in itemlist:   #Creates html code for each item in a list
         newhtmlstring = f"""<div class="row" style="margin-top: 0.2em; margin-left 0.5em;">
-        <div class='{item[1]} col-md-12' id='{item[0]}'> {item[0]} 
-        <div class='btn-group pull-right' role='group'>
-  <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>Not Started</a>
-  <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
-  <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>Completed</a>
-  <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>Delete</a>
-</div></div></div>"""
-        htmlstring = f"<li class='{item[1]}' id='{item[0]}'> {item[0]} <a href='javascript:change_item_status(\"{item[0]}\", \"Not Started\")' style='opacity: 0.5;'> N </a> <a href='javascript:change_item_status(\"{item[0]}\", \"In Progress\")' style='opacity: 0.5;'> P </a>  <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' style='opacity: 0.5;'> C </a> <a href='javascript:delete_item(\"{item[0]}\")' style='opacity: 0.5;'>X</a></li>"
+                                <div class='{item[1]} col-md-12' id='{item[0]}'> {item[0]} 
+                                    <div class='btn-group pull-right' role='group'>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>Not Started</a>
+                                         <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>Completed</a>
+                                        <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>Delete</a>
+                                    </div>
+                                </div>
+                            </div>"""
         outputhtml += newhtmlstring
     outputhtml += ''
     return outputhtml
-    
-    #for item in listItems: #HERE
-        #{'Name': item.itemname, "Status": item.completion_status}
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])   #Login route
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -137,12 +132,12 @@ def login():
         return redirect(next_page)
     return render_template('login.html', title='Sign In', form=form)
 
-@app.route('/logout')
+@app.route('/logout')   #Logout Route
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST'])    #Register Route
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
