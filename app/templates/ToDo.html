@@ -25,7 +25,7 @@ I also need to figure out how the data will be stored (to then be loaded here) -
                     <div class="form-group">
                         <label for="newlistnameentry" class="h4">New List: </label>
                         <input class="form-control" id="newlistnameentry" placeholder="Enter list name">
-                        <small id="emailHelp" class="form-text text-muted">Each list must have a unique name.</small>
+                        <small class="form-text text-muted">Each list must have a unique name.</small>
                     </div>
                     <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>
 
@@ -93,8 +93,11 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 </div>
 </div>
 
-
+<!-- Basically call the script block to load the bootstap.js and jquery so I dont have to load it my self -->
 {% block scripts %}
+<script src="{{bootstrap_find_resource('jquery.js', cdn='jquery')}}"></script>
+<script src="{{bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap')}}"></script>
+{% endblock %}
 <!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> -->
 <script type=text/javascript> // This section of script handles all clicking functions (just to simplify)
     // //For some reason using a toggle breaks with using bootstrap.
@@ -156,7 +159,6 @@ I also need to figure out how the data will be stored (to then be loaded here) -
     }
 
     function new_list(newlistname) {
-        alert('making a new list')
         // $(destElem).html('<img src="{{ url_for('static', filename='loading.gif') }}">'); Line for loading gif
         if (newlistname !== ''){
         $.post('/create_list/', {
@@ -170,7 +172,8 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             window.currentlist = newlistname // Same jank as in select_list
             $('#currentlistnametext').text(window.currentlist)
             $('#THISISWHERETHELISTSGO').html(updated_listoflists(response['listoflists']))
-            // $("#newlistnameentry").val('')  //Clears the name entry
+            $('#newitemform').css('display', 'block')
+            $("#newlistnameentry").val('')  //Clears the name entry
                 }}).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.'); //Probably not the right text to change in this scenario
         });
@@ -195,7 +198,6 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
     $("#newlistnamebutton").on('click', function(clickEvent) {
         clickEvent.stopPropagation()
-        alert('button press worked')
         new_list($("#newlistnameentry").val())})
         
     $("#newitemnamebutton").on('click', function(clickEvent) {
@@ -208,7 +210,12 @@ I also need to figure out how the data will be stored (to then be loaded here) -
         }).done(function(response) { //Need to decide what list should be shown. Presumably a check to see if the current list was deleted (which means just go to the one at the top of list)
             if (window.currentlist == listname){    // IF we deleted the list that the user is currently looking at then show nothing. Else dont change
                 $('#listitems').html('')
+                window.currentlist = 'No List Selected'
+                $('#currentlistnametext').text(window.currentlist)
+                $('#newitemform').css('display', 'none')
             }
+            
+            
             $('#THISISWHERETHELISTSGO').html(updated_listoflists(response['listoflists']))  //Always update the list of lists
         }).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.');
@@ -249,10 +256,4 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
     }
 </script>
-
-
-
-
-{% endblock %}
-
 {% endblock %}
