@@ -1,0 +1,8 @@
+.Completed {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.InProgress{
+    text-decoration: underline;
+}

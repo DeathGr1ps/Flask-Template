@@ -3,48 +3,114 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
 {% extends "base.html" %}
 
-{% block content %}
-<!-- Prints all of the lists which the user has -->
-<ul id='listoflists'>
-    {% for list in listnames %}
-    <!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
-    <li><a href="javascript:select_list('{{list}}')">{{ list }}</a><a href="javascript:delete_list('{{list}}')"
-            style="opacity: 0.5;">X</a></li>
-    {% endfor %}
-</ul>
-<!-- Will load in the new list form -->
-<div id="newlistbutton">New List</div>
-<!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
-<div id="newlistform" style="display: none;">
-    <input type='text' id='newlistnameentry' placeholder="List Name">
-    <input type='button' id='newlistnamebutton'>
-    <div id="closelistbutton"> Close </div>
-</div>
+{% block app_content %}
+<link rel="stylesheet" type="text/css" href="../static/css/ToDo.css">
 
-<div id="currenttodolist">
-    <div id="listitems">
+<div class="container">
+    <div class="row">
+        <!-- LEFT -->
+        <!-- Sidebar -->
+        <div class="bg-light border-right col-md-3" id="sidebar-wrapper">
+            <div class="sidebar-heading h3">Your Lists: </div>
+            <div class="list-group list-group-flush" id="listoflists">
+                {% for list in listnames %}
+                <div class="row list-group-item list-group-item-action bg-light">
+                    <a href="javascript:select_list('{{list}}')" class="col-md-6">{{ list }}</a>
+                    <a class="badge" href="javascript:delete_list('{{list}}')" style="opacity: 0.5;">X</a>
+                </div>
+                {% endfor %}
+                <div class="row list-group-item list-group-item-action bg-light" id="newlistform">
+                    <div class="form-group">
+                        <label for="newlistnameentry" class="h4">New List: </label>
+                        <input type="email" class="form-control" id="newlistnameentry" aria-describedby="emailHelp"
+                            placeholder="Enter list name">
+                        <small id="emailHelp" class="form-text text-muted">Each list must have a unique name.</small>
+                    </div>
+                    <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>
 
+                    <!-- <div class="col-md-6">
+                        <div class="h5" style="display:inline-block">New List: </div>
+                        <input type='text' id='newlistnameentry' style="display:inline-block" placeholder="List Name" class="form-control">
+                    </div> -->
+                </div>
+            </div>
+        </div>
+        <!-- End sidebar -->
+        <!-- <div class="col-md-3"> -->
+        <!-- Prints all of the lists which the user has -->
+        <!-- <ul id='listoflists' class="nav flex-column"> -->
+        <!-- {% for list in listnames %} -->
+        <!-- <a href="/select_list/{{ list }}">{{ list }}</a> -->
+        <!-- <li> -->
+        <!-- Next line includes some manual padding because it seems that Bootstrap 3 doesnt work with the model listed here https://getbootstrap.com/docs/4.0/utilities/spacing/-->
+        <!-- <div class="row" style="padding-top: 1em;"><a class="col-md-8" -->
+        <!-- href="javascript:select_list('{{list}}')">{{ list }}</a><a class="col-md-4"
+            href="javascript:delete_list('{{list}}')" style="opacity: 0.5;">X</a> -->
+        <!-- </div> -->
+
+        <!-- </li> -->
+        <!-- {% endfor %} -->
+        <!-- </ul> -->
+        <!-- <div id="newlistbutton" style="padding-top: 1em;"> <a> New List </a></div> -->
+        <!-- Menu for creating a new list. Will in theory be floating above the other stuff -->
+
+        <!-- </div> -->
+        <!-- LEFT-->
+
+
+
+        <!-- Will load in the new list form -->
+
+
+        <!-- RIGHT -->
+        <div class="col-md-9">
+            <div id="currenttodolist">
+                <div id="currentlistnametext" class="h3">No List Selected</div>
+                <hr>
+                <div id="listitems">
+                </div>
+                <hr>
+                <div id="newitemform" style="display:none">
+                <div class="form-group" >
+                    <label for="newitemnameentry" class="h4">New Item: </label>
+                    <input  class="form-control" id="newitemnameentry" placeholder="Enter new item">
+                    <small id="emailHelp" class="form-text text-muted">Remember each item must have a unique name.</small>
+                </div>
+                <button type="button" id='newitemnamebutton' class="btn btn-primary">Add!</button>
+            </div>
+
+                <!-- <div id="newitembutton">New Item</div> -->
+                <!-- <div id="newitemform" style="display: none;">
+                    <input type='text' id='newitemnameentry' placeholder='Item Name'>
+                    <input type='button' id='newitemnamebutton'>
+                    <div id="closeitembutton"> Close </div> -->
+                </div>
+            </div>
+        </div>
+        <!-- RIGHT -->
     </div>
-    <div id="newitembutton">New Item</div>
-    <div id="newitemform" style="display: none;">
-        <input type='text' id='newitemnameentry' placeholder='Item Name'>
-        <input type='button' id='newitemnamebutton'>
-        <div id="closeitembutton"> Close </div>
-    </div>
 </div>
-
-
 
 
 {% block scripts %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script type=text/javascript> // This section of script handles all clicking functions (just to simplify)
-    $("#newlistbutton").click(function () {
-        $("#newlistform").toggle("display") //Toggle allows to do a simple if.
-    })
-    $("#closelistbutton").click(function () {
-        $("#newlistform").toggle("display")
-    })
+    //For some reason using a toggle breaks with using bootstrap.
+    $("#newlistbutton").on('click', function(clickEvent) {
+        alert("hentai")
+        if ($("#newlistform").css("display") == "in-line") {
+            $("#newlistform").css("display", "none")
+        } else {
+            $("#newlistform").css("display", "in-line") 
+        }})
+
+    $("#closelistbutton").on('click', function(clickEvent) {
+        if ($("#newlistform").css("display") == "in-line") {
+            $("#newlistform").css("display", "none")
+        } else {
+            $("#newlistform").css("display", "in-line") 
+        }})
+
     $("#newitembutton").click(function () {
         $("#newitemform").toggle("display") //Toggle allows to do a simple if.
     })
@@ -57,9 +123,20 @@ I also need to figure out how the data will be stored (to then be loaded here) -
     function updated_listoflists(listoflists){//function to create the html code for displaying the list of lists whenever it is updated
         let htmlcode = ''
         for (i = 0; i < listoflists.length; i++) {
+                    let newtemplatestring = `<div class="row list-group-item list-group-item-action bg-light"><a href="javascript:select_list('${listoflists[i]}')" class="col-md-6">${listoflists[i]}</a>
+                    <a class="badge" href="javascript:delete_list('${listoflists[i]}')" style="opacity: 0.5;">X</a>
+                </div>`
                     let templatestring = `<li><a href="javascript:select_list('${listoflists[i]}')"> ${listoflists[i]} </a><a href="javascript:delete_list('${listoflists[i]}')" style="opacity: 0.5;">X</a></li>`
-                    htmlcode += templatestring
+                    htmlcode += newtemplatestring
                 }
+            htmlcode += `<div class="row list-group-item list-group-item-action bg-light" id="newlistform">
+                    <div class="form-group">
+                        <label for="newlistnameentry" class="h4">New List: </label>
+                        <input type="email" class="form-control" id="newlistnameentry" aria-describedby="emailHelp"
+                            placeholder="Enter list name">
+                        <small id="emailHelp" class="form-text text-muted">Each list must have a unique name.</small>
+                    </div>
+                    <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>`
             return htmlcode}
 
     function select_list(listname) {
@@ -68,7 +145,9 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             text: listname
         }).done(function(response) {
             $('#listitems').html(response['listhtml'])
+            $('#newitemform').css('display', 'block')
             window.currentlist = listname // Probably a really bad way of doing this but it is easy in this case. Could maybe do something jank with adding and removing classes?
+            $('#currentlistnametext').text(window.currentlist)
         }).fail(function() {
             $('#listitems').text('Error: Could not contact server.');
         });
@@ -85,7 +164,9 @@ I also need to figure out how the data will be stored (to then be loaded here) -
             } else {
                 
             $('#listitems').html(response['listhtml'])
+            $('#newitemform').css('display', 'block')
             window.currentlist = newlistname // Same jank as in select_list
+            $('#currentlistnametext').text(window.currentlist)
             $('#listoflists').html(updated_listoflists(response['listoflists']))
             $("#newlistnameentry").val('')  //Clears the name entry
                 }}).fail(function() {
@@ -144,8 +225,8 @@ I also need to figure out how the data will be stored (to then be loaded here) -
     function change_item_status(itemname, newstatus){
         //Change front end first. (classes)
         $(`#${itemname}`).removeClass('Completed')
-        $(`#${itemname}`).removeClass('In Progress')
-        $(`#${itemname}`).removeClass('Not Started')    //Remove all 3 classes (cant remove all because then bootstrap would break)
+        $(`#${itemname}`).removeClass('InProgress')
+        $(`#${itemname}`).removeClass('NotStarted')    //Remove all 3 classes (cant remove all because then bootstrap would break)
         $(`#${itemname}`).addClass(newstatus)   //ReAdd the new class
         //Then send the updated change to the backend
 
@@ -161,7 +242,7 @@ I also need to figure out how the data will be stored (to then be loaded here) -
 
 
     }
-</script> 
+</script>
 
 
 

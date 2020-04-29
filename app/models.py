@@ -48,7 +48,7 @@ class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     itemname = db.Column(db.String(64), index=True)
     #Three possible values: Not Started, In-progress, Completed
-    completion_status = db.Column(db.String(16), default="Not Started", index=True)
+    completion_status = db.Column(db.String(16), default="NotStarted", index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     list_id = db.Column(db.Integer, db.ForeignKey('list.id'))
 

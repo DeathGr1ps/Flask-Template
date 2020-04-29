@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify
 from app import app, db
-from app.forms import LoginForm, RegistrationForm, CreateListForm
+from app.forms import LoginForm, RegistrationForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, List, Item
 from werkzeug.urls import url_parse
@@ -12,17 +12,7 @@ from datetime import datetime
 def index():
     # Gets all of the lists which the user has created and lists them
     userListNames = returnuserlists()
-
-    # Form for creating new list
-    form = CreateListForm()
-    if form.validate_on_submit():
-        newlist = List(listname = form.listname.data, user_id=current_user.id)
-        db.session.add(newlist)
-        db.session.commit()
-        flash('Created New List!')
-        return redirect(url_for('index'))#Have to change this for AJAXian, In thoery should redirect to "select_list/<newlist>". Maybe I need to do an if method='post' then return an empty json and call something after this in the javascript function.
-
-    return render_template('ToDo.html', title='ToDo.Com', listnames=userListNames, form=form)
+    return render_template('ToDo.html', title='ToDo.Com', listnames=userListNames)
 
 def returnuserlists():
     user = User.query.filter_by(id=current_user.id).first()
@@ -112,11 +102,19 @@ def select_list(listname):      #This is AJAX Shit dunno how to do
     return itemList
 
 def list_html(itemlist):
-    outputhtml = '<ul>'
+    outputhtml = ''
     for item in itemlist:
+        newhtmlstring = f"""<div class="row" style="margin-top: 0.2em; margin-left 0.5em;">
+        <div class='{item[1]} col-md-12' id='{item[0]}'> {item[0]} 
+        <div class='btn-group pull-right' role='group'>
+  <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>Not Started</a>
+  <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
+  <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>Completed</a>
+  <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>Delete</a>
+</div></div></div>"""
         htmlstring = f"<li class='{item[1]}' id='{item[0]}'> {item[0]} <a href='javascript:change_item_status(\"{item[0]}\", \"Not Started\")' style='opacity: 0.5;'> N </a> <a href='javascript:change_item_status(\"{item[0]}\", \"In Progress\")' style='opacity: 0.5;'> P </a>  <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' style='opacity: 0.5;'> C </a> <a href='javascript:delete_item(\"{item[0]}\")' style='opacity: 0.5;'>X</a></li>"
-        outputhtml += htmlstring
-    outputhtml += '</ul>'
+        outputhtml += newhtmlstring
+    outputhtml += ''
     return outputhtml
     
     #for item in listItems: #HERE
