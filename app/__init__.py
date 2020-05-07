@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bootstrap import Bootstrap
+from flask_moment import Moment
 
 
 import logging
@@ -16,6 +17,7 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 #Sets the view function for the login page (what page has the login form)
 login.login_view = 'login'
-bootstrap = Bootstrap(app)  
+bootstrap = Bootstrap(app)
+moment = Moment(app)
 
 from app import routes, models

@@ -62,6 +62,8 @@
 
 <!-- Basically calls the script block to load the bootstap.js and jquery so I dont have to load it my self -->
 {% block scripts %}
+{{ super() }}
+{{ moment.include_moment() }}
 <script src="{{bootstrap_find_resource('jquery.js', cdn='jquery')}}"></script>
 <script src="{{bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap')}}"></script>
 {% endblock %}
@@ -83,6 +85,14 @@
             text: listname
         }).done(function(response) {
             $('#listitems').html(response['listhtml']) //Updates the list of items
+            //For any items that are completed display the completion time
+            let itemtimes = response['itemtimes']
+            alert(itemtimes)
+            for(i = 0; i < itemtimes.length; i++) {
+                itemname = itemtimes[i][0]
+                completiontime = itemtimes[i][1]
+                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+            }
             $('#newitemform').css('display', 'block')   //Shows the button for adding a new item to the list
             window.currentlist = listname // Probably a really bad way of doing this but it is easy in this case. Could maybe do something jank with adding and removing classes?
             $('#currentlistnametext').text(window.currentlist) //Updates the title at the top of the list
@@ -121,6 +131,12 @@
             } else {
             $('#listitems').html(response['listhtml'])
             $("#newitemnameentry").val('')
+            let itemtimes = response['itemtimes']
+            for(i = 0; i < itemtimes.length; i++) {
+                itemname = itemtimes[i][0]
+                completiontime = itemtimes[i][1]
+                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+            }
                 }}).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.'); 
         });
@@ -156,6 +172,12 @@
             parentlist: window.currentlist
         }).done(function(response) {   
             $('#listitems').html(response['listhtml'])
+            let itemtimes = response['itemtimes']
+            for(i = 0; i < itemtimes.length; i++) {
+                itemname = itemtimes[i][0]
+                completiontime = itemtimes[i][1]
+                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+            }
         }).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.');
         });
@@ -164,17 +186,25 @@
 
     function change_item_status(itemname, newstatus){ //Changes the classes (appearance) of list items based on their completion status.
         //Change front end first. (classes)
-        $(`#${itemname}`).removeClass('Completed')
-        $(`#${itemname}`).removeClass('InProgress')
-        $(`#${itemname}`).removeClass('NotStarted')    //Remove all 3 classes (cant remove all because then bootstrap would break)
-        $(`#${itemname}`).addClass(newstatus)   //ReAdd the new class
+        $(`#${itemname}`).parent().removeClass('Completed')
+        $(`#${itemname}`).parent().removeClass('InProgress')
+        $(`#${itemname}`).parent().removeClass('NotStarted')    //Remove all 3 classes (cant remove all because then bootstrap would break)
+        $(`#${itemname}`).parent().addClass(newstatus)   //ReAdd the new class
         //Then send the updated change to the backend
         $.post('/item_class/', {
             itemtobechanged: itemname,
             parentlist: window.currentlist,
             newstatus: newstatus
         }).done(function(response) {   
-            //Pass
+            if (response['timecompleted']) {
+                alert('somewhat working')
+                alert(response['timecompleted'])
+                alert($(`#${itemname}timecompleted`))
+                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())}
+            else {
+                $(`#${itemname}timecompleted`).text('')
+            }
+            //If the item was set to completed then we recieve text to slide in to say completion time
         }).fail(function() {
             $('#currenttodolist').text('Error: Could not contact server.');
         });

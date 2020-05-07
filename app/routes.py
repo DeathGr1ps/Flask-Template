@@ -44,8 +44,8 @@ def create_item():
         newitem = Item(itemname=newitemname, user_id=current_user.id, list_id=parentlist.id)    #Creates the Item object and adds to the database
         db.session.add(newitem)
         db.session.commit()
-        outhtml = get_formatted_list(request.form['parentlist'])  #Runs the function to get the raw html for the list
-        return jsonify({'isduplicatename': 'False', 'listhtml': outhtml}) #Only need to return the duplicate status, JS side already has a function for reloading the list of items
+        outhtml, itemtimes = get_formatted_list(request.form['parentlist'])  #Runs the function to get the raw html for the list
+        return jsonify({'isduplicatename': 'False', 'listhtml': outhtml, 'itemtimes': itemtimes}) #Only need to return the duplicate status, JS side already has a function for reloading the list of items
 
 @app.route('/delete_list/', methods=['POST'])       #Deletes a list
 @login_required
@@ -68,43 +68,59 @@ def delete_item():
                                         list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #Is on the list we are on
     db.session.delete(itemtodelete) #Delete the item
     db.session.commit() #Commit changes
-    itemlist = get_formatted_list(request.form['parentlist'])
-    return jsonify({'successful':'True', 'listhtml': itemlist})
+    itemlist, itemtimes = get_formatted_list(request.form['parentlist'])
+    return jsonify({'successful':'True', 'listhtml': itemlist, 'itemtimes': itemtimes})
 
 @app.route('/item_class/', methods=['POST'])    #Method for changing an items class (as listed in the database)
 @login_required
 def change_item_class():
+    timetosend=None
     #Find the item that:
     itemtochanged = Item.query.filter_by(itemname=request.form['itemtobechanged'],   #Has the name we looking for
                                         list_id=List.query.filter_by(listname = request.form['parentlist']).first().id).first() #On the list we are on
     itemtochanged.completion_status = request.form['newstatus'] #Changes the current completion status
+    if request.form['newstatus'] == 'Completed':
+        itemtochanged.completion_time = datetime.now()
+    else:   #This acts as a reset for if the item goes from completed to uncompleted
+        itemtochanged.completion_time = None
     db.session.commit() #Commit changes
-    return jsonify({'successful':'True'})   #Dont need to reload anything; all handled through CSS.
+    print(itemtochanged.completion_time)
+    return jsonify({'successful':'True', 'timecompleted': itemtochanged.completion_time})   #Dont need to reload anything; all handled through CSS.
 
 @app.route('/select_list/', methods=['POST'])   #Returns the html for items in a list (when a list is selected)
 @login_required
 def select_list_jsonifier():
-    return jsonify({'listhtml': get_formatted_list(request.form['text'])})
+    formatted_list, itemtimes = get_formatted_list(request.form['text'])
+    return jsonify({'listhtml': formatted_list, 'itemtimes': itemtimes})
 
 def get_formatted_list(listname):   #Kept seperate from list selection to be called to update list when an item is added or removed
     itemlist = select_list(listname)
     outputhtml = list_html(itemlist)
-    return outputhtml
+    itemtimes=[]
+    for item in itemlist:
+        if item[2] != None:
+            itemtimes.append((item[0], item[2]))#Newlist that stores pairs of values of datetime completion times and the associated item
+    print(itemtimes)
+    return outputhtml, itemtimes
 
 def select_list(listname):  #Retrieves the data pertaining to the items in a given list
     selectedlist = List.query.filter_by(listname = listname).first()
     listItems = selectedlist.items.all()
-    itemList = [(item.itemname, item.completion_status) for item in listItems]  #Froms a list of tuples. Tuple[0] = name, Tuple[1] = status
+    itemList = [(item.itemname, item.completion_status, item.completion_time) for item in listItems]  #Froms a list of tuples. Tuple[0] = name, Tuple[1] = status
     return itemList
 
 def list_html(itemlist):    #Kept seperate from list selection to be called to update listoflists when an List is added or removed
     outputhtml = ''
     for item in itemlist:   #Creates html code for each item in a list
-        newhtmlstring = f"""<div class="row" style="margin-top: 0.2em; margin-left 0.5em;">
-                                <div class='{item[1]} col-md-12' id='{item[0]}'> {item[0]} 
+        newhtmlstring = f"""<div class="row {item[1]}" style="margin-top: 0.2em; margin-left 0.5em;">
+                                <div class='classname col-xs-3' id='{item[0]}'> {item[0]}
+                                </div>
+                                <div id = "{item[0]}timecompleted" class="col-xs-2 timecompleted"></div>
+                                <div class="pull-right col-xs-7">
                                     <div class='btn-group pull-right' role='group'>
+                                    
                                         <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>Not Started</a>
-                                         <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
                                         <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>Completed</a>
                                         <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>Delete</a>
                                     </div>

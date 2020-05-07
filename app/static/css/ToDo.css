@@ -1,8 +1,11 @@
 .Completed {
     opacity: 0.5;
+}
+
+.Completed > .classname {
     text-decoration: line-through;
 }
 
-.InProgress{
+.InProgress > .classname{
     text-decoration: underline;
 }
