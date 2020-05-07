@@ -10,7 +10,7 @@
         <!-- LEFT -->
         <!-- Sidebar -->
         <div class="bg-light border-right col-md-3" id="sidebar-wrapper">
-            <div class="sidebar-heading h3">Your Lists: </div>
+            <div class="sidebar-heading h3">{{ _('Your Lists:') }} </div>
             <div class="list-group list-group-flush" id="listoflists">
                 <div id="THISISWHERETHELISTSGO">
                     <!-- Keeps lists seperate of the new list button to simplifier later recreation of the sidebar-->
@@ -26,11 +26,11 @@
                 <div class="row list-group-item list-group-item-action bg-light" id="newlistform">
                     <!-- Doesn't actually use form tags because dont want the webpage posting (eg. submit button) -->
                     <div class="form-group">
-                        <label for="newlistnameentry" class="h4">New List: </label>
+                        <label for="newlistnameentry" class="h4">{{ _('New List:') }}' </label>
                         <input class="form-control" id="newlistnameentry" placeholder="Enter list name">
-                        <small class="form-text text-muted">Each list must have a unique name.</small>
+                        <small class="form-text text-muted">{{ _('Each list must have a unique name.') }}</small>
                     </div>
-                    <button type="button" id='newlistnamebutton' class="btn btn-primary">Create!</button>
+                    <button type="button" id='newlistnamebutton' class="btn btn-primary">{{ _('Create!') }}</button>
                 </div>
             </div>
         </div>
@@ -38,7 +38,7 @@
         <!-- RIGHT -->
         <div class="col-md-9">
             <div id="currenttodolist">
-                <div id="currentlistnametext" class="h3">No List Selected</div>
+                <div id="currentlistnametext" class="h3">{{ _('No List Selected') }}</div>
                 <!-- This text is changed to reflect the current list-->
                 <hr>
                 <div id="listitems">
@@ -48,11 +48,11 @@
                 <!-- Largely a repeat of the list entry. -->
                 <div id="newitemform" style="display:none">
                     <div class="form-group">
-                        <label for="newitemnameentry" class="h4">New Item: </label>
+                        <label for="newitemnameentry" class="h4">{{ _('New Item:') }} </label>
                         <input class="form-control" id="newitemnameentry" placeholder="Enter new item">
-                        <small class="form-text text-muted">Remember each item must have a unique name.</small>
+                        <small class="form-text text-muted">{{ _('Remember each item must have a unique name.') }}</small>
                     </div>
-                    <button type="button" id='newitemnamebutton' class="btn btn-primary">Add!</button>
+                    <button type="button" id='newitemnamebutton' class="btn btn-primary">{{ _('Add!') }}</button>
                 </div>
             </div>
         </div>
@@ -64,6 +64,7 @@
 {% block scripts %}
 {{ super() }}
 {{ moment.include_moment() }}
+{{ moment.lang(g.locale) }}
 <script src="{{bootstrap_find_resource('jquery.js', cdn='jquery')}}"></script>
 <script src="{{bootstrap_find_resource('js/bootstrap.js', cdn='bootstrap')}}"></script>
 {% endblock %}
@@ -91,13 +92,13 @@
             for(i = 0; i < itemtimes.length; i++) {
                 itemname = itemtimes[i][0]
                 completiontime = itemtimes[i][1]
-                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+                $(`#${itemname}timecompleted`).text(_('Completed ') + moment(response['timecompleted']).fromNow())
             }
             $('#newitemform').css('display', 'block')   //Shows the button for adding a new item to the list
             window.currentlist = listname // Probably a really bad way of doing this but it is easy in this case. Could maybe do something jank with adding and removing classes?
             $('#currentlistnametext').text(window.currentlist) //Updates the title at the top of the list
         }).fail(function() {
-            $('#listitems').text('Error: Could not contact server.');
+            $('#listitems').text( _('Error: Could not contact server.'));
         });
     }
 
@@ -116,7 +117,7 @@
             $('#newitemform').css('display', 'block')
             $("#newlistnameentry").val('')  //Clears the name entry
                 }}).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.');
+            $('#currenttodolist').text(_('Error: Could not contact server.'));
         });
     }}
 
@@ -135,10 +136,10 @@
             for(i = 0; i < itemtimes.length; i++) {
                 itemname = itemtimes[i][0]
                 completiontime = itemtimes[i][1]
-                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+                $(`#${itemname}timecompleted`).text(_('Completed ') + moment(response['timecompleted']).fromNow())
             }
                 }}).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.'); 
+            $('#currenttodolist').text(_('Error: Could not contact server.')); 
         });
     }}
 
@@ -156,13 +157,13 @@
         }).done(function(response) { 
             if (window.currentlist == listname){    // IF we deleted the list that the user is currently looking at then show nothing. Else dont change
                 $('#listitems').html('')
-                window.currentlist = 'No List Selected'
+                window.currentlist = _('No List Selected')
                 $('#currentlistnametext').text(window.currentlist)
                 $('#newitemform').css('display', 'none')        //Disapear the new item form because there is no current list to add an item to.
             }
             $('#THISISWHERETHELISTSGO').html(updated_listoflists(response['listoflists']))  //Always update the list of lists
         }).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.');
+            $('#currenttodolist').text(_('Error: Could not contact server.'));
         });
     }
 
@@ -176,10 +177,10 @@
             for(i = 0; i < itemtimes.length; i++) {
                 itemname = itemtimes[i][0]
                 completiontime = itemtimes[i][1]
-                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())
+                $(`#${itemname}timecompleted`).text(_('Completed ') + moment(response['timecompleted']).fromNow())
             }
         }).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.');
+            $('#currenttodolist').text(_('Error: Could not contact server.'));
         });
 
     } 
@@ -200,13 +201,13 @@
                 alert('somewhat working')
                 alert(response['timecompleted'])
                 alert($(`#${itemname}timecompleted`))
-                $(`#${itemname}timecompleted`).text('Completed ' + moment(response['timecompleted']).fromNow())}
+                $(`#${itemname}timecompleted`).text(_('Completed ') + moment(response['timecompleted']).fromNow())}
             else {
                 $(`#${itemname}timecompleted`).text('')
             }
             //If the item was set to completed then we recieve text to slide in to say completion time
         }).fail(function() {
-            $('#currenttodolist').text('Error: Could not contact server.');
+            $('#currenttodolist').text(_('Error: Could not contact server.'));
         });
     }
 </script>

@@ -1,10 +1,16 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify
+from flask import render_template, flash, redirect, url_for, request, jsonify, g
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User, List, Item
 from werkzeug.urls import url_parse
 from datetime import datetime
+from flask_babel import _, get_locale
+
+
+@app.before_request
+def before_request():
+    g.locale = str(get_locale())
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
@@ -119,10 +125,10 @@ def list_html(itemlist):    #Kept seperate from list selection to be called to u
                                 <div class="pull-right col-xs-7">
                                     <div class='btn-group pull-right' role='group'>
                                     
-                                        <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>Not Started</a>
-                                        <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>In Progress</a>
-                                        <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>Completed</a>
-                                        <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>Delete</a>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"NotStarted\")' class='btn btn-info'>_l('Not Started')</a>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"InProgress\")' class='btn btn-warning'>_l('In Progress')</a>
+                                        <a href='javascript:change_item_status(\"{item[0]}\", \"Completed\")' class='btn btn-success'>_l('Completed')</a>
+                                        <a href='javascript:delete_item(\"{item[0]}\")' class='btn btn-danger'>_l('Delete')</a>
                                     </div>
                                 </div>
                             </div>"""
@@ -138,7 +144,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
+            flash(_('Invalid username or password'))
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
@@ -162,6 +168,6 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
+        flash(_('Congratulations, you are now a registered user!'))
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
